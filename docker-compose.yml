@@ -7,7 +7,7 @@ services:
     restart: always
     command: --log-dir /app/logs
     ports:
-      - "3000:3000"
+      - "3400:3000"
     volumes:
       - ./data/oneapi:/data
       - ./logs:/app/logs
@@ -43,7 +43,7 @@ services:
     volumes:
       - ./data/mysql:/var/lib/mysql  # 挂载目录，持久化存储
     ports:
-      - '3306:3306'
+      - '3406:3306'
     environment:
       TZ: Asia/Shanghai   # 设置时区
       MYSQL_ROOT_PASSWORD: 'OneAPI@justsong' # 设置 root 用户的密码
