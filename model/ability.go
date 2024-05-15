@@ -2,10 +2,12 @@ package model
 
 import (
 	"context"
-	"github.com/songquanpeng/one-api/common"
-	"gorm.io/gorm"
+	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/songquanpeng/one-api/common"
+	"gorm.io/gorm"
 )
 
 type Ability struct {
@@ -14,9 +16,11 @@ type Ability struct {
 	ChannelId int    `json:"channel_id" gorm:"primaryKey;autoIncrement:false;index"`
 	Enabled   bool   `json:"enabled"`
 	Priority  *int64 `json:"priority" gorm:"bigint;default:0;index"`
+	IsImage   bool   `json:"is_image" gorm:"default:false"`
 }
 
-func GetRandomSatisfiedChannel(group string, model string, ignoreFirstPriority bool) (*Channel, error) {
+func GetRandomSatisfiedChannel(group string, model string, ignoreFirstPriority bool, isImage bool) (*Channel, error) {
+	fmt.Println("GetRandomSatisfiedChannel", group, model, ignoreFirstPriority, isImage)
 	ability := Ability{}
 	groupCol := "`group`"
 	trueVal := "1"
@@ -32,6 +36,10 @@ func GetRandomSatisfiedChannel(group string, model string, ignoreFirstPriority b
 	} else {
 		maxPrioritySubQuery := DB.Model(&Ability{}).Select("MAX(priority)").Where(groupCol+" = ? and model = ? and enabled = "+trueVal, group, model)
 		channelQuery = DB.Where(groupCol+" = ? and model = ? and enabled = "+trueVal+" and priority = (?)", group, model, maxPrioritySubQuery)
+		if isImage {
+			fmt.Println("这边要过滤掉不是图片的")
+			channelQuery = channelQuery.Where("is_image = ?", true)
+		}
 	}
 	if common.UsingSQLite || common.UsingPostgreSQL {
 		err = channelQuery.Order("RANDOM()").First(&ability).Error
@@ -59,6 +67,7 @@ func (channel *Channel) AddAbilities() error {
 				ChannelId: channel.Id,
 				Enabled:   channel.Status == ChannelStatusEnabled,
 				Priority:  channel.Priority,
+				IsImage:   channel.IsImage,
 			}
 			abilities = append(abilities, ability)
 		}

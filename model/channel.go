@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/songquanpeng/one-api/common/config"
 	"github.com/songquanpeng/one-api/common/helper"
 	"github.com/songquanpeng/one-api/common/logger"
@@ -36,6 +37,7 @@ type Channel struct {
 	ModelMapping       *string `json:"model_mapping" gorm:"type:varchar(1024);default:''"`
 	Priority           *int64  `json:"priority" gorm:"bigint;default:0"`
 	Config             string  `json:"config"`
+	IsImage            bool    `json:"is_image" gorm:"default:false"`
 }
 
 type ChannelConfig struct {
@@ -132,6 +134,7 @@ func (channel *Channel) Insert() error {
 
 func (channel *Channel) Update() error {
 	var err error
+	fmt.Println("channel.Update, channel:", channel)
 	err = DB.Model(channel).Updates(channel).Error
 	if err != nil {
 		return err

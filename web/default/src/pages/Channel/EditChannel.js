@@ -44,7 +44,8 @@ const EditChannel = () => {
     other: '',
     model_mapping: '',
     models: [],
-    groups: ['default']
+    groups: ['default'],
+    is_image: false
   };
   const [batch, setBatch] = useState(false);
   const [inputs, setInputs] = useState(originInputs);
@@ -188,6 +189,8 @@ const EditChannel = () => {
     localInputs.models = localInputs.models.join(',');
     localInputs.group = localInputs.groups.join(',');
     localInputs.config = JSON.stringify(config);
+
+    console.log(localInputs);
     if (isEdit) {
       res = await API.put(`/api/channel/`, { ...localInputs, id: parseInt(channelId) });
     } else {
@@ -510,6 +513,16 @@ const EditChannel = () => {
                 label='批量创建'
                 name='batch'
                 onChange={() => setBatch(!batch)}
+              />
+            )
+          }
+          {
+            inputs.type !== 33 && (
+              <Form.Checkbox
+                checked={inputs.is_image}
+                label='是否支持Image Api'
+                name='isi_mage'
+                onChange={() => handleInputChange(null, { name: 'is_image', value: !inputs.is_image })}
               />
             )
           }

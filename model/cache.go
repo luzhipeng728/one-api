@@ -5,16 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/songquanpeng/one-api/common"
-	"github.com/songquanpeng/one-api/common/config"
-	"github.com/songquanpeng/one-api/common/logger"
-	"github.com/songquanpeng/one-api/common/random"
 	"math/rand"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/songquanpeng/one-api/common"
+	"github.com/songquanpeng/one-api/common/config"
+	"github.com/songquanpeng/one-api/common/logger"
+	"github.com/songquanpeng/one-api/common/random"
 )
 
 var (
@@ -224,9 +225,9 @@ func SyncChannelCache(frequency int) {
 	}
 }
 
-func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPriority bool) (*Channel, error) {
+func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPriority bool, isImage bool) (*Channel, error) {
 	if !config.MemoryCacheEnabled {
-		return GetRandomSatisfiedChannel(group, model, ignoreFirstPriority)
+		return GetRandomSatisfiedChannel(group, model, ignoreFirstPriority, isImage)
 	}
 	channelSyncLock.RLock()
 	defer channelSyncLock.RUnlock()

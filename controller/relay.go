@@ -3,7 +3,11 @@ package controller
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/songquanpeng/one-api/common"
 	"github.com/songquanpeng/one-api/common/config"
@@ -16,8 +20,6 @@ import (
 	"github.com/songquanpeng/one-api/relay/controller"
 	"github.com/songquanpeng/one-api/relay/model"
 	"github.com/songquanpeng/one-api/relay/relaymode"
-	"io"
-	"net/http"
 )
 
 // https://platform.openai.com/docs/api-reference/chat
@@ -64,7 +66,49 @@ func Relay(c *gin.Context) {
 		retryTimes = 0
 	}
 	for i := retryTimes; i > 0; i-- {
-		channel, err := dbmodel.CacheGetRandomSatisfiedChannel(group, originalModel, i != retryTimes)
+		// 在不影响后续通过c.Request.Body 获取 body 的情况下，将 body 读取出来
+		// 读取 body
+		var bodyBytes []byte
+		if c.Request.Body != nil {
+			bodyBytes, _ = io.ReadAll(c.Request.Body)
+		}
+
+		// 将 body 内容重新设置回 c.Request.Body
+		c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+		// 解析 body 到请求的结构体
+
+		// 解析 JSON 请求数据
+		// 检查是否有 messages 字段并解析
+		isImage := false
+		var requestData map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &requestData); err != nil {
+			fmt.Println("解析 JSON 请求数据失败")
+		} else {
+			if messages, ok := requestData["messages"].([]interface{}); ok {
+				for _, message := range messages {
+					if msgMap, ok := message.(map[string]interface{}); ok {
+						if content, exists := msgMap["content"]; exists {
+							switch content.(type) {
+							case []interface{}:
+								for _, item := range content.([]interface{}) {
+									if itemMap, ok := item.(map[string]interface{}); ok {
+										if t, exists := itemMap["type"]; exists && t == "image_url" {
+											isImage = true
+											break
+										}
+									}
+								}
+							}
+							if isImage {
+								break
+							}
+						}
+					}
+				}
+			}
+		}
+		channel, err := dbmodel.CacheGetRandomSatisfiedChannel(group, originalModel, i != retryTimes, isImage)
 		if err != nil {
 			logger.Errorf(ctx, "CacheGetRandomSatisfiedChannel failed: %+v", err)
 			break

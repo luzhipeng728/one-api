@@ -1,13 +1,15 @@
 package controller
 
 import (
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/songquanpeng/one-api/common/config"
 	"github.com/songquanpeng/one-api/common/helper"
 	"github.com/songquanpeng/one-api/model"
-	"net/http"
-	"strconv"
-	"strings"
 )
 
 func GetAllChannels(c *gin.Context) {
@@ -147,6 +149,7 @@ func DeleteDisabledChannel(c *gin.Context) {
 
 func UpdateChannel(c *gin.Context) {
 	channel := model.Channel{}
+	fmt.Println("channel", channel.IsImage)
 	err := c.ShouldBindJSON(&channel)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{

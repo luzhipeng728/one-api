@@ -1,14 +1,18 @@
 package middleware
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/songquanpeng/one-api/common/ctxkey"
 	"github.com/songquanpeng/one-api/common/logger"
 	"github.com/songquanpeng/one-api/model"
 	"github.com/songquanpeng/one-api/relay/channeltype"
-	"net/http"
-	"strconv"
 )
 
 type ModelRequest struct {
@@ -20,6 +24,49 @@ func Distribute() func(c *gin.Context) {
 		userId := c.GetInt(ctxkey.Id)
 		userGroup, _ := model.CacheGetUserGroup(userId)
 		c.Set(ctxkey.Group, userGroup)
+		// 在不影响后续通过c.Request.Body 获取 body 的情况下，将 body 读取出来
+		// 读取 body
+		var bodyBytes []byte
+		if c.Request.Body != nil {
+			bodyBytes, _ = io.ReadAll(c.Request.Body)
+		}
+
+		// 将 body 内容重新设置回 c.Request.Body
+		c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+		// 解析 body 到请求的结构体
+
+		// 解析 JSON 请求数据
+		// 检查是否有 messages 字段并解析
+		isImage := false
+		var requestData map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &requestData); err != nil {
+			fmt.Println("解析 JSON 请求数据失败")
+		} else {
+			if messages, ok := requestData["messages"].([]interface{}); ok {
+				for _, message := range messages {
+					if msgMap, ok := message.(map[string]interface{}); ok {
+						if content, exists := msgMap["content"]; exists {
+							switch content.(type) {
+							case []interface{}:
+								for _, item := range content.([]interface{}) {
+									if itemMap, ok := item.(map[string]interface{}); ok {
+										if t, exists := itemMap["type"]; exists && t == "image_url" {
+											isImage = true
+											break
+										}
+									}
+								}
+							}
+							if isImage {
+								break
+							}
+						}
+					}
+				}
+			}
+		}
+
 		var requestModel string
 		var channel *model.Channel
 		channelId, ok := c.Get(ctxkey.SpecificChannelId)
@@ -41,7 +88,7 @@ func Distribute() func(c *gin.Context) {
 		} else {
 			requestModel = c.GetString(ctxkey.RequestModel)
 			var err error
-			channel, err = model.CacheGetRandomSatisfiedChannel(userGroup, requestModel, false)
+			channel, err = model.CacheGetRandomSatisfiedChannel(userGroup, requestModel, false, isImage)
 			if err != nil {
 				message := fmt.Sprintf("当前分组 %s 下对于模型 %s 无可用渠道", userGroup, requestModel)
 				if channel != nil {
