@@ -101,7 +101,7 @@ func (a *Adaptor) DoResponseV4(c *gin.Context, resp *http.Response, meta *meta.M
 	if meta.IsStream {
 		err, _, usage = openai.StreamHandler(c, resp, meta.Mode, meta.OriginModelName)
 	} else {
-		err, usage = openai.Handler(c, resp, meta.PromptTokens, meta.ActualModelName)
+		err, usage = openai.Handler(c, resp, meta.PromptTokens, meta.ActualModelName, meta.OriginModelName)
 	}
 	return
 }
