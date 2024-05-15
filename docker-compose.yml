@@ -19,6 +19,9 @@ services:
 #      - NODE_TYPE=slave  # 多机部署时从节点取消注释该行
 #      - SYNC_FREQUENCY=60  # 需要定期从数据库加载数据时取消注释该行
 #      - FRONTEND_BASE_URL=https://openai.justsong.cn  # 多机部署时从节点取消注释该行
+      - GLOBAL_API_RATE_LIMIT=900000
+      - BATCH_UPDATE_ENABLED=true
+      - BATCH_UPDATE_INTERVAL=10
     depends_on:
       - redis
       - db
