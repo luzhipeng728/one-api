@@ -26,7 +26,7 @@ const (
 var modelmapper = map[string]string{
 	"gpt-4-turbo":         "gpt-4-turbo-2024-04-09",
 	"gpt-4":               "gpt-4-0613",
-	"gpt-3.5-turbo":       "gpt-3.5-turbo-0613",
+	"gpt-3.5-turbo":       "gpt-3.5-turbo-0125",
 	"gpt-3.5-turbo-16k":   "gpt-3.5-turbo-16k-0613",
 	"gpt-4-32k":           "gpt-4-32k-0613",
 	"gpt-4-turbo-preview": "gpt-4-0125-preview",
@@ -246,11 +246,11 @@ func StreamHandler(c *gin.Context, resp *http.Response, relayMode int, originMod
 // 	return nil, responseText, usage
 // }
 
-func Handler(c *gin.Context, resp *http.Response, promptTokens int, modelName string) (*model.ErrorWithStatusCode, *model.Usage) {
+func Handler(c *gin.Context, resp *http.Response, promptTokens int, modelName string, originModelName string) (*model.ErrorWithStatusCode, *model.Usage) {
 	// 在modelmapper中查找对应的模型名称,如果不存在，就用originModelNmae，否则使用modelmapper中的模型名称
-	if v, ok := modelmapper[modelName]; ok {
+	if v, ok := modelmapper[originModelName]; ok {
 		fmt.Println("modelName is in modelmapper change to ", v)
-		modelName = v
+		originModelName = v
 	}
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -288,7 +288,7 @@ func Handler(c *gin.Context, resp *http.Response, promptTokens int, modelName st
 	// 删除外层的 prompt_filter_results 字段
 	delete(jsonResponse, "prompt_filter_results")
 	// 修改下model名称
-	jsonResponse["model"] = modelName
+	jsonResponse["model"] = originModelName
 
 	// 将修改后的 JSON 对象重新转换为字符串
 	modifiedResponseBody, err := json.Marshal(jsonResponse)
