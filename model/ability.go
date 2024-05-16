@@ -39,6 +39,9 @@ func GetRandomSatisfiedChannel(group string, model string, ignoreFirstPriority b
 		if isImage {
 			fmt.Println("这边要过滤掉不是图片的")
 			channelQuery = channelQuery.Where("is_image = ?", true)
+		} else {
+			fmt.Println("这边要过滤掉是图片的")
+			channelQuery = channelQuery.Where("is_image = ?", false)
 		}
 	}
 	if common.UsingSQLite || common.UsingPostgreSQL {
