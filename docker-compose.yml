@@ -3,7 +3,8 @@ version: '3.4'
 services:
   one-api:
     build: .
-    container_name: one-api
+    image: "${REGISTRY:-docker.io}/luzhipeng728/luai:latest"
+    container_name: one-api-1
     restart: always
     command: --log-dir /app/logs
     ports:
@@ -12,7 +13,7 @@ services:
       - ./data/oneapi:/data
       - ./logs:/app/logs
     environment:
-      - SQL_DSN=oneapi:123456@tcp(db:3306)/one-api  # 修改此行，或注释掉以使用 SQLite 作为数据库
+      - SQL_DSN=root:lu7637219@tcp(82.197.94.152:3306)/one-api  # 修改此行，或注释掉以使用 SQLite 作为数据库
       - REDIS_CONN_STRING=redis://redis
       - SESSION_SECRET=random_string  # 修改为随机字符串
       - TZ=Asia/Shanghai
@@ -21,10 +22,14 @@ services:
 #      - FRONTEND_BASE_URL=https://openai.justsong.cn  # 多机部署时从节点取消注释该行
       - GLOBAL_API_RATE_LIMIT=900000
       - BATCH_UPDATE_ENABLED=true
-      - BATCH_UPDATE_INTERVAL=10
+      - BATCH_UPDATE_INTERVAL=30
+      - MEMORY_CACHE_ENABLED=true
+      - SYNC_FREQUENCY=60
+
+
     depends_on:
       - redis
-      - db
+      # - db
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O - http://localhost:3000/api/status | grep -o '\"success\":\\s*true' | awk -F: '{print $$2}'"]
       interval: 30s
@@ -33,20 +38,20 @@ services:
 
   redis:
     image: "${REGISTRY:-docker.io}/redis:latest"
-    container_name: redis
+    container_name: redis-1
     restart: always
 
-  db:
-    image: "${REGISTRY:-docker.io}/mysql:8.2.0"
-    restart: always
-    container_name: mysql
-    volumes:
-      - ./data/mysql:/var/lib/mysql  # 挂载目录，持久化存储
-    ports:
-      - '3406:3306'
-    environment:
-      TZ: Asia/Shanghai   # 设置时区
-      MYSQL_ROOT_PASSWORD: 'OneAPI@justsong' # 设置 root 用户的密码
-      MYSQL_USER: oneapi   # 创建专用用户
-      MYSQL_PASSWORD: '123456'    # 设置专用用户密码
-      MYSQL_DATABASE: one-api   # 自动创建数据库
+  # db:
+  #   image: "${REGISTRY:-docker.io}/mysql:8.2.0"
+  #   restart: always
+  #   container_name: mysql
+  #   volumes:
+  #     - ./data/mysql:/var/lib/mysql  # 挂载目录，持久化存储
+  #   ports:
+  #     - '3406:3306'
+  #   environment:
+  #     TZ: Asia/Shanghai   # 设置时区
+  #     MYSQL_ROOT_PASSWORD: 'OneAPI@justsong' # 设置 root 用户的密码
+  #     MYSQL_USER: oneapi   # 创建专用用户
+  #     MYSQL_PASSWORD: '123456'    # 设置专用用户密码
+  #     MYSQL_DATABASE: one-api   # 自动创建数据库
