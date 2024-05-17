@@ -246,11 +246,32 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 			}
 		}
 	}
+	// 过滤掉不是图片的和过滤掉是图片的
+	if isImage {
+		newChannels := make([]*Channel, 0, endIdx)
+		for i := 0; i < endIdx; i++ {
+			if channels[i].IsImage {
+				newChannels = append(newChannels, channels[i])
+			}
+		}
+		channels = newChannels
+		endIdx = len(channels)
+	} else {
+		newChannels := make([]*Channel, 0, endIdx)
+		for i := 0; i < endIdx; i++ {
+			if !channels[i].IsImage {
+				newChannels = append(newChannels, channels[i])
+			}
+		}
+		channels = newChannels
+		endIdx = len(channels)
+	}
 	idx := rand.Intn(endIdx)
 	if ignoreFirstPriority {
 		if endIdx < len(channels) { // which means there are more than one priority
 			idx = random.RandRange(endIdx, len(channels))
 		}
 	}
+
 	return channels[idx], nil
 }
