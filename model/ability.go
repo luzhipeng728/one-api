@@ -44,6 +44,17 @@ func GetRandomSatisfiedChannel(group string, model string, ignoreFirstPriority b
 			channelQuery = channelQuery.Where("is_image = ?", false)
 		}
 	}
+
+	// 先进行计数查询，确保有满足条件的记录
+	var count int64
+	if err = channelQuery.Count(&count).Error; err != nil {
+		return nil, err
+	}
+	if count == 0 {
+		return nil, fmt.Errorf("no satisfied channel found")
+	}
+
+	// 进行实际查询
 	if common.UsingSQLite || common.UsingPostgreSQL {
 		err = channelQuery.Order("RANDOM()").First(&ability).Error
 	} else {

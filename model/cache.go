@@ -231,10 +231,12 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 	}
 	channelSyncLock.RLock()
 	defer channelSyncLock.RUnlock()
-	channels := group2model2channels[group][model]
-	if len(channels) == 0 {
+
+	channels, ok := group2model2channels[group][model]
+	if !ok || len(channels) == 0 {
 		return nil, errors.New("channel not found")
 	}
+
 	endIdx := len(channels)
 	// choose by priority
 	firstChannel := channels[0]
@@ -246,26 +248,31 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 			}
 		}
 	}
+
 	// 过滤掉不是图片的和过滤掉是图片的
+	var newChannels []*Channel
 	if isImage {
-		newChannels := make([]*Channel, 0, endIdx)
+		newChannels = make([]*Channel, 0, endIdx)
 		for i := 0; i < endIdx; i++ {
 			if channels[i].IsImage {
 				newChannels = append(newChannels, channels[i])
 			}
 		}
-		channels = newChannels
-		endIdx = len(channels)
 	} else {
-		newChannels := make([]*Channel, 0, endIdx)
+		newChannels = make([]*Channel, 0, endIdx)
 		for i := 0; i < endIdx; i++ {
 			if !channels[i].IsImage {
 				newChannels = append(newChannels, channels[i])
 			}
 		}
-		channels = newChannels
-		endIdx = len(channels)
 	}
+
+	if len(newChannels) == 0 {
+		return nil, errors.New("no channels found after filtering")
+	}
+
+	channels = newChannels
+	endIdx = len(channels)
 	idx := rand.Intn(endIdx)
 	if ignoreFirstPriority {
 		if endIdx < len(channels) { // which means there are more than one priority
