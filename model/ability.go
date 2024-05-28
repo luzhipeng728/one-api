@@ -35,7 +35,11 @@ func GetRandomSatisfiedChannel(group string, model string, ignoreFirstPriority b
 		channelQuery = DB.Where(groupCol+" = ? and model = ? and enabled = "+trueVal, group, model)
 	} else {
 		maxPrioritySubQuery := DB.Model(&Ability{}).Select("MAX(priority)").Where(groupCol+" = ? and model = ? and enabled = "+trueVal, group, model)
+		// 打印下
+		fmt.Println(maxPrioritySubQuery.Debug().Error)
 		channelQuery = DB.Where(groupCol+" = ? and model = ? and enabled = "+trueVal+" and priority = (?)", group, model, maxPrioritySubQuery)
+		// 打印sql
+		fmt.Println(channelQuery.Debug().Find(&ability).Error)
 		if isImage {
 			fmt.Println("这边要过滤掉不是图片的")
 			channelQuery = channelQuery.Where("is_image = ?", true)
